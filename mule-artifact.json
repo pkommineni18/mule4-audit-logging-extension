@@ -1,0 +1,16 @@
+{
+  "configs": [],
+  "secureProperties": [],
+  "redeploymentEnabled": true,
+  "name": "audit-logging-extension",
+  "minMuleVersion": "4.1.2",
+  "requiredProduct": "MULE_EE",
+  "classLoaderModelLoaderDescriptor": {
+    "id": "mule",
+    "attributes": {}
+  },
+  "bundleDescriptorLoader": {
+    "id": "mule",
+    "attributes": {}
+  }
+}

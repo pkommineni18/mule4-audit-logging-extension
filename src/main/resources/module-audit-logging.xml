@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="AuditLogger" prefix="audit-logger"
+	doc:description="This module relies entirely in runtime provided components (no other Plugin dependencies)"
+	xmlns="http://www.mulesoft.org/schema/mule/module" xmlns:mule="http://www.mulesoft.org/schema/mule/core"
+	xmlns:httpn="http://www.mulesoft.org/schema/mule/http" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+           http://www.mulesoft.org/schema/mule/module http://www.mulesoft.org/schema/mule/module/current/mule-module.xsd
+           http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+           http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+           http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+           http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<vm:config name="send2splunkVMConfig" doc:name="VM Config"
+		doc:id="653179f3-e8c6-4a9b-95d9-5bcc2c3ba689">
+		<vm:queues>
+			<vm:queue queueName="logMessageTransientQ"
+				maxOutstandingMessages="#[vars.vmMessages]" />
+			<vm:queue queueName="logMessagePersistentQ" queueType="PERSISTENT"
+				maxOutstandingMessages="#[vars.vmMessages]"/>
+		</vm:queues>
+	</vm:config>
+	<httpn:request-config name="Splunk_HTTP_Request_configuration"
+		doc:name="HTTP Request configuration" doc:id="90e24c4e-bedf-44de-a87b-603a1066ad08">
+		<httpn:request-connection host="#[vars.splunkHost]"
+			port="#[vars.splunkPort]" protocol="HTTPS" connectionIdleTimeout="5000">
+			 <mule:reconnection> <mule:reconnect frequency="#[vars.splunkReconnectionFrequency]" 
+				count="#[vars.splunkReconnectionAttempts]" /> 
+			</mule:reconnection> 
+		</httpn:request-connection>
+	</httpn:request-config>
+
+	<property name="send2Splunk" type="boolean" displayName="Send Log to Splunk"
+		example= "true/false" doc:description=" use value from property file to set the value ex:${secure::splunk.send.to.splunk}" use="AUTO"></property>
+	<property name="splunkHost" type="string" displayName="Splunk Host"
+		example= "${secure::splunk.host}" doc:description=" use value from property file to set the value ex:${secure::splunk.host}" use="AUTO"></property>
+	<property name="splunkPort" type="number" displayName="Splunk Port"
+		example="${secure::splunk.port}" doc:description=" use value from property file to set the value ex:${secure::splunk.port}" use="AUTO"></property>
+	<property name="splunkPath" type="number" displayName="Splunk Path"
+		example="${secure::splunk.path}" doc:description=" use value from property file to set the value ex: ${secure::splunk.path}" use="AUTO"></property>	
+	<property name="splunkAuth" type="string" displayName="Splunk Authorization Code"
+		password="true" example="Splunk E6899426-F277-4492-9904-123456" doc:description=" use value from property file to set the value ${secure::splunk.auth}" use="AUTO"></property>
+	<property name="splunkReconnectionFrequency" type="number"
+		displayName="Splunk Reconnection Frequency" example="3000" doc:description=" use value from property file to set the value ${secure::splunk.reconnection.frequency}" use="AUTO"></property>
+	<property name="splunkReconnectionAttempts" type="number"
+		displayName="Splunk Reconnection Attempts" doc:description=" use value from property file to set the value ${secure::splunk.reconnection.attempts}" example="3" use="AUTO"></property>
+	<property name="vmPersistent" type="boolean" displayName="VM persistent"
+		doc:description="use value from property file to set the value ${secure::splunk.reconnection.attempts}" example="true,false" use="OPTIONAL"></property>
+	<property name="vmMessages" type="number"
+		displayName="VM Max Outstanding Messages" doc:description=" use value from property file to set the value ${secure::vm.queue.outstanding.messages}" example="100" use="AUTO"></property>
+	<operation name="log-message"
+		doc:description="Sets the payload to the value of the parameterized 'inputParam'">
+		<parameters>
+			<parameter name="uuid" type="string" defaultValue="#[vars.uuid]" displayName="UUID" doc:description="Auto Genrated UUID use default value" example="#[uuid()]"></parameter>
+			<parameter name="inboundType" type="string" displayName="Transport Type" use="OPTIONAL" example="WMQ,File,SFTP,HTTP,AMQ,POLL" doc:description="Source Transport Type" ></parameter>
+			<parameter name="version" type="string" displayName="Application Version" defaultValue="v1" use="AUTO" doc:description="Mule Application Version"></parameter>
+			<parameter name="flowName" type="string" displayName="Flow Name" use="OPTIONAL" doc:description="Application Flow Name"></parameter>
+			<parameter name="eventName" type="string" displayName="Event Name" use="OPTIONAL" doc:description="Specific Event details"/>
+			<parameter name="flowStep" type="string" example="start/end/error" displayName="Flow Step" doc:description="Flow Step default start/end/error"/>
+			<parameter name="httpMethod" type="string" defaultValue="#[attributes.method]" use="OPTIONAL" displayName="HTTP Method" doc:description="Application Attribute Value: Http Method"/>
+			<parameter name="remoteIP" type="string" defaultValue="#[attributes.remoteAddress]" use="OPTIONAL" displayName="Remote IP" doc:description="Remote IP /calling IP"/>
+			<parameter name="clientID" type="string" defaultValue="#[attributes.headers.client_id]" use="OPTIONAL" displayName="Client ID" doc:description="Client ID from API manager"/>
+			<parameter name="clientName" type="string" defaultValue="#[authentication.properties.clientName]" use="OPTIONAL" displayName="Client Name" doc:description="Client Name from API manager"/>
+			<parameter name="additionalKeys" type="string" defaultValue="#[vars.additionalKeys]" use="OPTIONAL" displayName="Additional Attributes" doc:description="Additional Attributes to be logged"/>
+<!-- 			<parameter name="content" type="LoggingJsonType"></parameter>
+ -->		</parameters>
+		<body>
+			<mule:flow-ref name="auditLoggingFramework" target="targetOutput" targetValue="#[payload]"></mule:flow-ref>
+		</body>
+
+		<!-- <output type="string" doc:description="Payload's output"/> -->
+	</operation>
+
+
+	<mule:sub-flow name="auditLoggingFramework">
+
+		<mule:set-payload value="#[null]" doc:name="nullpayload"
+			doc:id="f4a84b31-d31c-4119-a6ac-6b5a3aa261b9" />
+		<ee:transform doc:name="loggingMessage"
+			doc:id="bb3244f0-eb45-4598-884c-cf7bb9b4a5df">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json indent=false
+---
+{
+   "uuid": vars.uuid default null,
+   "appName": app.name default null,
+   "type": vars.inboundType default null,
+   "httpMethod": vars.httpMethod default null,
+   "version": vars.version default "v1", //see if we can auto generate
+   "flowName": vars.flowName default null,
+   "eventName": vars.eventName default null,
+   "flowStep":vars.flowStep default null,
+   "timeStamp": now(),
+   "remoteIP": vars.remoteIP default null,
+   "ip": server.ip default null,
+   "clientID": vars.clientID default null,
+   "clientName": vars.clientName default null
+ }
+++ 
+ ( if  (vars.additionalKeys != null) vars.additionalKeys mapObject using (key=$$,value=$) 
+{
+    (key): value
+} else 
+ {}
+ )]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<mule:remove-variable variableName="additionalKeys"></mule:remove-variable>
+		<mule:logger message='#[payload]' level="INFO" doc:name="logAuditMessage" category="com.mcu.mule4.extensions.auditlogger" />
+				<ee:transform doc:name="Transform Message"
+					doc:id="b19f3a7d-57a6-498a-a0c4-375fd3a727a8">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	logPayload: payload
+	
+}
+++
+{
+	splunkAuth: vars.splunkAuth
+	
+	}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>	
+		<mule:choice>
+			<mule:when expression="#[vars.vmPersistent != true and vars.send2Splunk]">
+				<vm:publish queueName="logMessageTransientQ" doc:name="send2splunkTransient"
+					doc:id="17c6e1db-3ac3-4234-abf2-b01fb698c346" config-ref="send2splunkVMConfig"
+					timeout="2" sendCorrelationId="AUTO" />
+			</mule:when>
+			<mule:when expression="#[vars.vmPersistent and vars.send2Splunk]">
+				<vm:publish queueName="logMessagePersistentQ" doc:name="send2splunkPersistent"
+					doc:id="fe6937b0-3d67-468e-865e-99958cfcf355" config-ref="send2splunkVMConfig"
+					timeout="2" sendCorrelationId="AUTO" />
+			</mule:when>
+			<mule:otherwise>
+				<mule:logger message="send to splunk flag is set to false"></mule:logger>
+			</mule:otherwise>
+		</mule:choice>
+	</mule:sub-flow>
+
+
+
+	<mule:flow name="send2SplunkPersistenQ">
+		<vm:listener doc:name="vmPersistenListener"
+			doc:id="61b86dd2-514c-4d22-bb9b-c68ccf904c65" config-ref="send2splunkVMConfig"
+			queueName="logMessagePersistentQ" timeout="5" />
+		<mule:flow-ref name="invokeSplunkHTTPRequest"></mule:flow-ref>
+		<mule:error-handler>
+			<mule:on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="649201ad-b3c5-4709-9337-fc54666205f9" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="1d0e226d-3fe0-4faf-9b46-98e02252acae">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json indent=false
+---
+{
+   "status": "errorForlogMessagePersistent",
+   "message": payload,
+   "splunkRequestPayload": null,
+   "time":  now() as String {unit: "milliseconds"} default null
+   }]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<mule:logger message="#[payload]" level="INFO" doc:name="logAuditMessage" category="com.mcu.mule4.extensions.auditlogger" />
+ </mule:on-error-continue>
+		</mule:error-handler>
+	</mule:flow>
+
+	<mule:flow name="send2SplunkTransientQ">
+		<vm:listener doc:name="vmTransientListener"
+			doc:id="61b86dd2-514c-4d22-bb9b-c68ccf904c65" config-ref="send2splunkVMConfig"
+			queueName="logMessageTransientQ" timeout="5" />
+		<mule:set-variable value="#[payload.splunkAuth]"
+			variableName="splunkAuth"></mule:set-variable>
+		<mule:flow-ref name="invokeSplunkHTTPRequest"></mule:flow-ref>
+	<mule:error-handler>
+			<mule:on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="649201ad-b3c5-4709-9337-fc54666205f9" type="ANY">
+				<ee:transform doc:name="Transform Message" doc:id="1d0e226d-3fe0-4faf-9b46-98e02252acae">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json indent=false
+---
+{
+   "status": "errorForlogMessageTransient",
+   "message": payload,
+   "splunkRequestPayload": null,
+   "time":  now() as String {unit: "milliseconds"} default null
+   }]]></ee:set-payload>
+					</ee:message>
+					</ee:transform>
+		<mule:logger message="#[payload]" level="INFO" doc:name="logAuditMessage" category="com.mcu.mule4.extensions.auditlogger" />
+ </mule:on-error-continue>
+		</mule:error-handler>
+	</mule:flow>
+
+	<mule:sub-flow name="invokeSplunkHTTPRequest"
+		doc:id="258e90a3-fd97-44ae-b1fd-8434d9bb16f2">
+		<mule:set-payload value="#[payload.logPayload]"
+			mimeType="application/json"></mule:set-payload>
+		<ee:transform doc:name="send2SplunkPayload"
+			doc:id="7a9ea3d7-2daf-4110-bfb2-15733db4ff92">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+					output application/json indent=false
+					---
+					{
+					"sourcetype":"json",
+					"event": payload, 
+					"source": server.ip default null, //change it to sourceIP
+					"time": (payload.timeStamp as DateTime) as Number {unit: "milliseconds"} default null
+					}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<mule:logger message="#[payload] " level="DEBUG"
+			doc:name="logSplunkInputPayload" category="com.mcu.mule4.consume-from-vmqueues" />
+
+		<httpn:request method="POST" doc:name="callSplunk"
+			doc:id="7ae066d3-ee1f-4b2e-a0f4-5c6e34a8b54c" config-ref="Splunk_HTTP_Request_configuration"
+			path="#[vars.splunkPath]" target="splunkResponse"> 
+			<httpn:headers><![CDATA[#[output applicaton/java
+---
+{
+	Authorization : vars.splunkAuth
+}]]]></httpn:headers>
+			<httpn:response-validator>
+				<httpn:success-status-code-validator
+					values="200..599" />
+			</httpn:response-validator>
+		</httpn:request>
+		<mule:choice doc:name="statusSuccess">
+			<mule:when expression="#[vars.splunkResponse.text == 'Success']">
+				<mule:logger message="#[vars.splunkResponse]" level="DEBUG"
+					doc:name="Logger" category="com.mcu.mule4.extensions.auditlogger" />
+			</mule:when>
+			<mule:otherwise>
+				<mule:logger message='"send2splunk error: " #[vars.splunkResponse]'
+					level="INFO" doc:name="Logger" category="com.mcu.mule4.extensions.auditlogger" />
+			</mule:otherwise>
+		</mule:choice>
+	</mule:sub-flow>
+</module>

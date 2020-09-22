@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "uuid": {
+      "type": "string",
+      "default": "#[uuid()]"
+    },
+    "inboundType": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "default": "v1"
+    },
+  	"flowName": {
+      "type": "string",
+      "default": "v1"
+    },
+  	"eventName": {
+      "type": "string",
+      "default": "v1"
+    },
+  	"flowStep": {
+      "type": "string",
+      "default": "v1"
+    },
+  	"httpMethod": {
+      "type": "string",
+      "default": "#[attributes.method]"
+    },
+  "remoteIP": {
+      "type": "string",
+      "default": "#[attributes.remoteAddress]"
+    }
+   },
+  "additionalProperties": false
+}

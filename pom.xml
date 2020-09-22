@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!-- <parent> <groupId>org.mule.smart.connector</groupId> <artifactId>audit-logging-connector-parent</artifactId> 
+		<version>1.0.0-SNAPSHOT</version> </parent> -->
+	<groupId>com.mcu.mule4.extensions</groupId>
+	<artifactId>audit-logging-extension</artifactId>
+	<version>1.0.0</version>
+	<packaging>mule-extension</packaging>
+	<name>audit-logging-extension</name>
+	<description>A Mule extension done with pure Mule DSL</description>
+
+	<properties>
+		<!-- Smart Connector properties -->
+		<mule.version>4.1.2</mule.version>
+		<mule.extensions.maven.plugin.version>1.1.3</mule.extensions.maven.plugin.version>
+		<!-- Smart Connector IT dependnecies -->
+		<maven.resources.version>3.0.2</maven.resources.version>
+		<mule.maven.plugin.version>3.0.0</mule.maven.plugin.version>
+		<munit.maven.plugin.version>2.0.0</munit.maven.plugin.version>
+		<munit.runtime.version>2.0.0</munit.runtime.version>
+		<mule.module.http.version>1.2.0</mule.module.http.version>
+		<munit.version>2.1.0</munit.version>
+<!--    <munit.extensions.maven.plugin.version>1.0.0</munit.extensions.maven.plugin.version>
+        <munit.input.directory>src/test/munit</munit.input.directory>
+        <munit.output.directory>${basedir}/target/test-mule/munit</munit.output.directory> -->
+	</properties>
+	<build>
+		<pluginManagement>
+            <plugins>
+                <!-- <plugin>
+                    <groupId>com.mulesoft.munit</groupId>
+                    <artifactId>munit-extensions-maven-plugin</artifactId>
+                    <version>${munit.extensions.maven.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>munit-extension-test</id>
+                            <phase>integration-test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <dynamicPorts>
+                            <dynamicPort>a.dynamic.port</dynamicPort>
+                        </dynamicPorts>
+                        <environmentVariables>
+                            <MY_ENV>envVar</MY_ENV>
+                        </environmentVariables>
+                        <argLines>
+                        &lt;!&ndash; To debug the runtime through MUnit &ndash;&gt;
+                        <debugger.argline>-agentlib:jdwp=transport=dt_socket,server=y,address=8000,suspend=y</debugger.argline>
+                        <argLine>-Djava.library.path=lib/</argLine>
+                        <argLine>-Xmx8192m</argLine>
+                        <argLine>-XX:-UseGCOverheadLimit</argLine>
+                        </argLines>
+                    </configuration>
+                </plugin> -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-resources-plugin</artifactId>
+                    <version>${maven.resources.version}</version>
+                    <!-- <executions>
+                        <execution>
+                            <id>copy-munit-resources</id>
+                            <phase>process-test-resources</phase>
+                            <goals>
+                                <goal>copy-resources</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${munit.output.directory}</outputDirectory>
+                                <resources>
+                                    <resource>
+                                        <directory>${munit.input.directory}</directory>
+                                        <filtering>true</filtering>
+                                    </resource>
+                                </resources>
+                            </configuration>
+                        </execution>
+                    </executions> -->
+                </plugin>
+            </plugins>
+        </pluginManagement>
+		<plugins>
+			<plugin>
+				<groupId>org.mule.runtime.plugins</groupId>
+				<artifactId>mule-extensions-maven-plugin</artifactId>
+				<version>${mule.extensions.maven.plugin.version}</version>
+				<extensions>true</extensions>
+			</plugin>
+			<!-- <plugin>
+                <groupId>com.mulesoft.munit</groupId>
+                <artifactId>munit-extensions-maven-plugin</artifactId>
+            </plugin> -->
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>org.mule.runtime</groupId>
+			<artifactId>mule-module-extensions-xml-support</artifactId>
+			<version>${mule.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		 <dependency>
+            <groupId>com.mulesoft.mule.runtime.modules</groupId>
+            <artifactId>mule-module-spring-config-ee</artifactId>
+            <version>${mule.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-vm-connector</artifactId>
+			<version>2.0.0</version>
+			<classifier>mule-plugin</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.mule.connectors</groupId>
+			<artifactId>mule-http-connector</artifactId>
+			<version>1.3.1</version>
+			<classifier>mule-plugin</classifier>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+	<repositories>
+		<repository>
+			<id>mulesoft-releases</id>
+			<name>MuleSoft Releases Repository</name>
+			<url>http://repository.mulesoft.org/releases/</url>
+			<layout>default</layout>
+		</repository>
+		<repository>
+			<id>mulesoft-snapshots</id>
+			<name>MuleSoft Snapshots Repository</name>
+			<url>https://repository.mulesoft.org/snapshots/</url>
+			<layout>default</layout>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+	<pluginRepository>
+			<id>mulesoft-releases</id>
+			<name>MuleSoft Releases Repository</name>
+			<url>http://repository.mulesoft.org/releases/</url>
+			<layout>default</layout>
+	</pluginRepository>
+	</pluginRepositories>
+</project>
